@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Botwave AI | Muhammed Sabith KP</title>
+    <style>
+        :root {
+            --bg: #020408;
+            --card: #0d1117;
+            --accent: #00d2ff;
+            --text: #e6edf3;
+            --user-msg: #1f6feb;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100dvh;
+            background: var(--bg); color: var(--text);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Login Screen */
+        #login-overlay {
+            position: fixed; inset: 0; background: var(--bg);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; transition: transform 0.5s ease-out;
+        }
+
+        .login-card {
+            background: var(--card); padding: 40px; border-radius: 20px;
+            border: 1px solid var(--accent); text-align: center;
+            box-shadow: 0 0 50px rgba(0, 210, 255, 0.2);
+            width: 80%; max-width: 380px;
+        }
+
+        /* Main Layout */
+        .app {
+            display: flex; flex-direction: column; height: 100dvh;
+            max-width: 700px; margin: 0 auto; background: var(--card);
+        }
+
+        header {
+            padding: 15px 25px; border-bottom: 1px solid #30363d;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .brand-box .title { font-size: 20px; font-weight: 800; color: var(--accent); }
+        .brand-box .sub { font-size: 10px; color: #8b949e; letter-spacing: 1px; }
+
+        #chat-flow {
+            flex: 1; overflow-y: auto; padding: 20px;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+
+        /* Bubbles */
+        .bubble {
+            max-width: 85%; padding: 12px 16px; border-radius: 18px;
+            font-size: 15px; line-height: 1.5; word-wrap: break-word;
+            animation: pop 0.3s ease-out;
+        }
+        @keyframes pop { from { opacity: 0; transform: scale(0.9); } }
+
+        .bot { background: #21262d; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #30363d; }
+        .human { background: var(--user-msg); align-self: flex-end; border-bottom-right-radius: 4px; color: #fff; }
+
+        /* Controls */
+        .input-zone {
+            padding: 20px; display: flex; gap: 10px;
+            background: #0d1117; border-top: 1px solid #30363d;
+        }
+
+        input {
+            flex: 1; background: #161b22; border: 1px solid #30363d;
+            color: white; padding: 12px 20px; border-radius: 30px; outline: none;
+        }
+
+        .action-btn {
+            width: 48px; height: 48px; border-radius: 50%;
+            border: none; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+
+        .mic-btn { background: #21262d; color: white; }
+        .mic-btn.listening { background: #f85149; box-shadow: 0 0 15px #f85149; animation: pulse 1.5s infinite; }
+        .send-btn { background: var(--accent); color: #000; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* Thinking indicator */
+        #status { font-size: 12px; color: var(--accent); margin-left: 20px; display: none; }
+    </style>
+</head>
+<body>
+
+<div id="login-overlay">
+    <div class="login-card">
+        <h1 style="margin:0;">BOTWAVE AI</h1>
+        <p style="color:#8b949e; font-size:12px;">CREATED BY MUHAMMED SABITH KP</p>
+        <input type="text" id="name-in" placeholder="Your name..." style="width:80%; margin: 25px 0;">
+        <button class="action-btn send-btn" style="width:100%; border-radius:12px;" onclick="enterApp()">START CHAT</button>
+    </div>
+</div>
+
+<div class="app">
+    <header>
+        <div class="brand-box">
+            <div class="title">BOTWAVE</div>
+            <div class="sub">BY MUHAMMED SABITH KP</div>
+        </div>
+        <div id="status">Bot is thinking...</div>
+    </header>
+
+    <div id="chat-flow"></div>
+
+    <div class="input-zone">
+        <button id="voice-btn" class="action-btn mic-btn">🎤</button>
+        <input type="text" id="text-in" placeholder="Message Botwave...">
+        <button id="go-btn" class="action-btn send-btn">➤</button>
+    </div>
+</div>
+
+<script>
+    // --- 2026 API CONFIG ---
+    const KEY = "AIzaSyBDWS1oObtZVzLpXfh3X08tCGUVZNjjN6Q"; // 1. Put your key here
+    const MODEL_NAME = "gemini-2.5-flash"; // 2. Current 2026 stable model
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/${MODEL_NAME}:generateContent?key=${KEY}`;
+
+    let user = "User";
+    const flow = document.getElementById('chat-flow');
+    const textIn = document.getElementById('text-in');
+    const status = document.getElementById('status');
+
+    function enterApp() {
+        const n = document.getElementById('name-in').value.trim();
+        if(n) user = n;
+        document.getElementById('login-overlay').style.transform = 'translateY(-100%)';
+        setTimeout(() => addMsg(`Hello ${user}! I am the latest Botwave AI. How can I help you?`, 'bot'), 600);
+    }
+
+    function addMsg(txt, type) {
+        const div = document.createElement('div');
+        div.className = `bubble ${type}`;
+        div.innerHTML = `<strong>${type==='human' ? user : 'Botwave'}:</strong><br>${txt}`;
+        flow.appendChild(div);
+        flow.scrollTop = flow.scrollHeight;
+        if(type === 'bot') speak(txt);
+    }
+
+    async function chat() {
+        const prompt = textIn.value.trim();
+        if(!prompt) return;
+
+        addMsg(prompt, 'human');
+        textIn.value = "";
+        status.style.display = "block";
+
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+
+            const data = await response.json();
+            status.style.display = "none";
+
+            if(data.error) {
+                addMsg(`Error: ${data.error.message}`, 'bot');
+            } else {
+                const aiTxt = data.candidates[0].content.parts[0].text;
+                addMsg(aiTxt, 'bot');
+            }
+        } catch (e) {
+            status.style.display = "none";
+            addMsg("Connection failed. Check your internet or API key.", 'bot');
+        }
+    }
+
+    // --- LIVE CHAT (VOICE) ---
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(Recognition) {
+        const rec = new Recognition();
+        const vBtn = document.getElementById('voice-btn');
+
+        vBtn.onclick = () => {
+            try { rec.start(); } catch(e) { rec.stop(); }
+        };
+
+        rec.onstart = () => vBtn.classList.add('listening');
+        rec.onend = () => vBtn.classList.remove('listening');
+        rec.onresult = (e) => {
+            textIn.value = e.results[0][0].transcript;
+            chat();
+        };
+    }
+
+    function speak(t) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(t);
+        window.speechSynthesis.speak(msg);
+    }
+
+    document.getElementById('go-btn').onclick = chat;
+    textIn.onkeypress = (e) => { if(e.key === 'Enter') chat(); };
+</script>
+</body>
+</html>
